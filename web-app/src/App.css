@@ -1,20 +1,4 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
 .App-header {
-  background-color: #282c34;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -24,15 +8,49 @@
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+@font-face {
+  font-family: 'Proxima Nova Light';
+  font-style: normal;
+  font-weight: 300;
+  src: url(./assets/fonts/ProximaNova/5474.otf) format('opentype');
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+@font-face {
+  font-family: 'Proxima Nova';
+  font-style: normal;
+  font-weight: normal;
+  src: url(./assets/fonts/ProximaNova/175.otf) format('opentype');
 }
+
+@font-face {
+  font-family: 'Proxima Nova Medium';
+  font-style: normal;
+  font-weight: 500;
+  src: url(./assets/fonts/ProximaNova/25136.otf) format('opentype');
+}
+
+@font-face {
+  font-family: 'Proxima Nova Bold';
+  font-style: normal;
+  font-weight: 700;
+  src: url(./assets/fonts/ProximaNova/139.otf) format('opentype');
+}
+
+@font-face {
+  font-family: 'Proxima Nova Black';
+  font-style: normal;
+  font-weight: 900;
+  src: url(./assets/fonts/ProximaNova/137.otf) format('opentype');
+}
+
+/*
+100 Thin (Hairline)
+200 Extra Light (Ultra Light)
+300 Light
+400 Normal
+500 Medium
+600 Semi Bold (Demi Bold)
+700 Bold
+800 Extra Bold (Ultra Bold)
+900 Black (Heavy)
+*/
