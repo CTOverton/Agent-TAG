@@ -13,7 +13,7 @@
 import java.util.ArrayList;
 import java.util.Random;
 
-public class Sxk1552GinRummyPlayerV1 implements GinRummyPlayer {
+public class Sxk1552GinRummyPlayer_NEq implements GinRummyPlayer {
     private int playerNum;
     @SuppressWarnings("unused")
     private int startingPlayerNum;
@@ -222,6 +222,10 @@ public class Sxk1552GinRummyPlayerV1 implements GinRummyPlayer {
             if (bestMeldSets.isEmpty() || bestDeadwood > GinRummyUtil.MAX_DEADWOOD) {
                 return null;
             }
+            // Nash Equilibrum strategy, knocking only when deadwood is 0 and tailoring the melds chosen
+            if(bestDeadwood > 0){
+                return null;
+            }
             // Check if opponent can meld into deadwood cards, if so, try not to use that set
             if(bestMeldSets.size() > 1){
                 ArrayList<ArrayList<Card>> deadwoodCards = Helper.getDeadwoodCards(cards, bestMeldSets);
@@ -237,24 +241,6 @@ public class Sxk1552GinRummyPlayerV1 implements GinRummyPlayer {
                     leftoverCards = 0;
                     if(bestMeldSets.size() == 1){break;}
                 }
-            }
-
-            // if deadwood requirement is reached very early, go out in hopes of opponent not having a lot to meld
-            // also go out if gin is already acquired
-            if (GameState.numTurns <= 1 || bestDeadwood == 0) {
-                return bestMeldSets.get(random.nextInt(bestMeldSets.size()));
-            }
-            // fairly low chance of doing much better before other player knocks, so knock first
-            if(bestDeadwood < 5 && GameState.numFaceDownCards < 10 && (bestDeadwood - Helper.getAvgDeadwoodAfterDraw(this.cards)) < 2) {
-                return bestMeldSets.get(random.nextInt(bestMeldSets.size()));
-            }
-            // else, do not knock if deadwood is > 1
-            if (bestDeadwood > 1) {
-                return null;
-            }
-            // if deadwood is <= 1, do not meld if there is a reasonable chance to go gin
-            if(Helper.getUnmeldableCardsAfterDraw(this.cards).isEmpty() && (Helper.getNumCardsForGin(this.cards)/(double)GameState.numFaceDownCards) > 0.2){
-                return null;
             }
         }
 

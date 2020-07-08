@@ -1,19 +1,19 @@
 //===============================================================================
-// Name			    : Sxk1552GinRummyPlayerV1.java
+// Name			    : Sxk1552GinRummyPlayerV2.java
 // Author		    : Sarah Kettell
 // Class	        : CMPSC 497, Algorithmic Game Theory
-// Assignment	    : Week 4 Tasks
-// Date 		    : June 18, 2020
+// Assignment	    : Week 6 Tasks
+// Date 		    : July 1, 2020
 // Updates:
-// 1. Adjusted the minimum deadwood requirement for the player to knock. (Line 269)
-// 2. Investigated checking the opponent's known cards to see if any of my
-//    deadwood or discards would provide melds for them. (Lines 133 and 419)
+// 1. Adjusted my knock strategy with a third factor for the Nash Eq.
+// 2. Adjusted my draw face up strategy after testing combinations of
+//    deadwood change and turn thresholds
 //================================================================================
 
 import java.util.ArrayList;
 import java.util.Random;
 
-public class Sxk1552GinRummyPlayerV1 implements GinRummyPlayer {
+public class Sxk1552GinRummyPlayerV2 implements GinRummyPlayer {
     private int playerNum;
     @SuppressWarnings("unused")
     private int startingPlayerNum;
@@ -21,6 +21,7 @@ public class Sxk1552GinRummyPlayerV1 implements GinRummyPlayer {
     private Random random = new Random();
     private boolean opponentKnocked = false;
     private int refusedKnock = 0;
+    private int checkAccess = 0;
     Card faceUpCard, drawnCard;
     ArrayList<Long> drawDiscardBitstrings = new ArrayList<Long>();
 
@@ -55,10 +56,9 @@ public class Sxk1552GinRummyPlayerV1 implements GinRummyPlayer {
                 return true;
             }
         }
-        // If first turn and card doesn't meld immediately, check if it can be melded with one more draw
-        // also check if card would be best to discard after picking up, if not, may be worth grabbing
-        if(GameState.numTurns == 0){
-            if(!Helper.getUnmeldableCardsAfterDraw(newCards).contains(card) && Helper.determineBestCardsAfterDiscard(newCards).contains(card)) {
+        // If card does lower deadwood and it can be potentially melded after one draw, and it is early in the game, take it
+        if(GameState.numTurns < 2 && deadwoodAfterDraw > 4){
+            if(!Helper.getUnmeldableCardsAfterDraw(newCards).contains(card)) {
                 return true;
             };
         }
@@ -168,7 +168,7 @@ public class Sxk1552GinRummyPlayerV1 implements GinRummyPlayer {
             }
             candidateCards = GinRummyUtil.bitstringToCards(tempCandidateCards);
         }
-        // If candidate cards still  1, check if likely that opponent will discard tens or face cards,
+        // If candidate cards still > 1, check if likely that opponent will discard tens or face cards,
         // increasing likelihood of picking up meld from face up
         if(numCards > 1){
             double avgDiscardRank = Helper.getAveragePointsForOpponentDiscards();
@@ -238,26 +238,15 @@ public class Sxk1552GinRummyPlayerV1 implements GinRummyPlayer {
                     if(bestMeldSets.size() == 1){break;}
                 }
             }
-
-            // if deadwood requirement is reached very early, go out in hopes of opponent not having a lot to meld
-            // also go out if gin is already acquired
-            if (GameState.numTurns <= 1 || bestDeadwood == 0) {
+            // if gin, knock
+            if(bestDeadwood == 0){
                 return bestMeldSets.get(random.nextInt(bestMeldSets.size()));
             }
-            // fairly low chance of doing much better before other player knocks, so knock first
-            if(bestDeadwood < 5 && GameState.numFaceDownCards < 10 && (bestDeadwood - Helper.getAvgDeadwoodAfterDraw(this.cards)) < 2) {
-                return bestMeldSets.get(random.nextInt(bestMeldSets.size()));
-            }
-            // else, do not knock if deadwood is > 1
-            if (bestDeadwood > 1) {
-                return null;
-            }
-            // if deadwood is <= 1, do not meld if there is a reasonable chance to go gin
-            if(Helper.getUnmeldableCardsAfterDraw(this.cards).isEmpty() && (Helper.getNumCardsForGin(this.cards)/(double)GameState.numFaceDownCards) > 0.2){
+            // follow nash eq. strategy for seen cards,unmatchable cards, and deadwood
+            if(!Helper.getKnockStrategy(bestDeadwood, GameState.seenCards, Helper.getUnmeldableCardsAfterDraw(cards).size())){
                 return null;
             }
         }
-
         return bestMeldSets.isEmpty() ? new ArrayList<ArrayList<Card>>() : bestMeldSets.get(random.nextInt(bestMeldSets.size()));
     }
 
@@ -564,6 +553,52 @@ public class Sxk1552GinRummyPlayerV1 implements GinRummyPlayer {
                 tempDeadwood = myCardsBitStr;
             }
             return deadwoodCards;
+        }
+
+        // Number of cards in a bit string, taken from CFR program
+        /**
+         * Efficiently Count # of 1's in a bitstring
+         *
+         * @param bitString the bitstring
+         * @return the number of set bits (i.e. bits set to 1) in the bitstring
+         */
+        public static int getSetBits(long bitString) {
+            // Using Kernighan�s Algorithm for counting set bits
+            int count = 0;
+            while (bitString != 0) {
+                bitString = bitString & (bitString - 1); // Unset the least significant bit with a 1
+                count++;
+            }
+            return count;
+        }
+
+        // Knock Nash Equil. strategy based on seen cards / 5 and deadwood
+        public static boolean getKnockStrategy(int deadwood, long seen, int unmatchable){
+            // strategy[deadwood-1][seen/5 - 2]
+            int[][][] strategy = {
+                    //   2        3          4         5        6         7          8         = number seen/3
+                    {{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}},   // deadwood = 1
+                    {{1,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,1,0},{0,0,0,0},{0,0,0,0}},   // deadwood = 2
+                    {{1,0,1,0},{0,1,0,0},{0,0,1,0},{0,1,1,0},{0,0,1,0},{0,0,1,0},{0,0,0,0}},   // deadwood = 3
+                    {{1,1,1,0},{1,1,0,0},{0,1,1,0},{0,1,1,0},{0,0,1,1},{0,0,0,0},{0,0,0,0}},   // deadwood = 4
+                    {{1,1,1,0},{1,1,1,0},{0,1,1,0},{0,0,1,1},{0,1,0,0},{0,0,0,0},{0,0,0,0}},   // deadwood = 5
+                    {{1,1,1,1},{1,1,1,1},{1,1,1,1},{0,0,1,1},{0,0,1,1},{0,0,0,0},{0,0,0,0}},   // deadwood = 6
+                    {{1,1,1,1},{1,1,1,1},{0,1,1,1},{0,0,1,1},{0,0,0,0},{0,0,0,0},{0,0,0,0}},    // deadwood = 7
+                    {{1,1,1,1},{1,1,1,1},{0,1,1,1},{0,0,1,1},{0,0,0,0},{0,0,0,0},{0,0,0,0}},    // deadwood = 8
+                    {{1,1,1,1},{1,1,1,1},{0,1,1,1},{0,0,1,1},{0,0,0,0},{0,0,0,0},{0,0,0,0}},    // deadwood = 9
+                    {{1,1,1,1},{1,1,1,1},{0,0,1,1},{0,0,0,1},{0,0,0,0},{0,0,0,0},{0,0,0,0}}     // deadwood = 10
+            };
+            int numSeenKey = getSetBits(seen)/5;
+            if(numSeenKey < 2 || deadwood > 10 || numSeenKey > 8 || unmatchable > 3){
+                // seen cannot be below 2 and deadwood cannot be above 10
+                // if numSeenKey > 8 or unmatchable > 3, no eq. strat for this, revert back to deadwood strat.
+                return false;
+            }
+            Random random = new Random();
+            if(strategy[deadwood-1][numSeenKey-2][unmatchable] == 1){
+                return true;
+            }
+            return false;
         }
 
     }
