@@ -1,8 +1,12 @@
+package agents.jacob;
+
+import ginrummy.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
-public class Jag6248GinRummyPlayerV3 implements GinRummyPlayer{
+public class Jag6248GinRummyPlayerV3 implements GinRummyPlayer {
     private int playerNum;
     @SuppressWarnings("unused")
     private int startingPlayerNum;
