@@ -1,13 +1,7 @@
+package agents.sarah;
 //===============================================================================
-// Name			    : Sxk1552GinRummyPlayerV2.java
+// Name			    : agents.sarah.Sxk1552GinRummyPlayerV3.java
 // Author		    : Sarah Kettell
-// Class	        : CMPSC 497, Algorithmic Game Theory
-// Assignment	    : Week 6 Tasks
-// Date 		    : July 1, 2020
-// Updates:
-// 1. Adjusted my knock strategy with a third factor for the Nash Eq.
-// 2. Adjusted my draw face up strategy after testing combinations of
-//    deadwood change and turn thresholds
 //================================================================================
 
 import ginrummy.Card;
@@ -60,12 +54,6 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
                 return true;
             }
         }
-//        // If card does lower deadwood and it can be potentially melded after one draw, and it is early in the game, take it
-//        if(GameState.numTurns < 2 && deadwoodAfterDraw > 4){
-//            if(!Helper.getUnmeldableCardsAfterDraw(newCards).contains(card)) {
-//                return true;
-//            };
-//        }
         boolean isUnmeldable = Helper.getUnmeldableCardsAfterDraw(newCards).contains(card);
         return Helper.getDrawStrategy(deadwoodAfterDraw, Helper.getSetBits(GameState.seenCards), isUnmeldable);
     }
