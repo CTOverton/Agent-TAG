@@ -35,6 +35,19 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
     @Override
     public boolean willDrawFaceUpCard(Card card) {
         this.faceUpCard = card;
+        int[][] jacobsScaryBigArrayMonstrosity = new int[][]{
+                {0, 0}, // 0 DeadWood Drop
+                {0, 1}, // 1 Deadwood Drop, Makes Meld = index 1
+                {0, 1}, // 2 Deadwood drop, Makes Meld = index 1
+                {0, 1}, // 3
+                {0, 1}, // 4
+                {0, 1}, // 5
+                {0, 1}, // 6
+                {0, 1}, // 7
+                {0, 1}, // 8
+                {1, 1}, // 9 <--- Secretly the only real difference between my and Sarah's
+                {1, 1}, // 10 Anything greater than this doesn't matter, it's all the same
+        };
         @SuppressWarnings("unchecked")
         ArrayList<Card> newCards = (ArrayList<Card>) cards.clone();
         newCards.add(card);
@@ -43,14 +56,17 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
         PercentTwenty_v1.GameState.seenCards = PercentTwenty_v1.GameState.seenCards | 1L << card.getId();
 
         // Draw the face up card if it forms a meld that lowers deadwood after discard
-        int deadwoodAfterDraw = PercentTwenty_v1.Helper.doesCardLowerDeadwood(cards, card);
+        int deadwoodAfterDraw = Math.max(Math.min(PercentTwenty_v1.Helper.doesCardLowerDeadwood(cards, card), 10), 0);
+        int makesMeldIndex = 0;
         for (ArrayList<Card> meld : GinRummyUtil.cardsToAllMelds(newCards)) {
-            if (meld.contains(card) && deadwoodAfterDraw > 0) {
-                return true;
+            if (meld.contains(card)) {
+                makesMeldIndex = 1;
             }
         }
-        boolean isUnmeldable = PercentTwenty_v1.Helper.getUnmeldableCardsAfterDraw(newCards).contains(card);
-        return PercentTwenty_v1.Helper.getDrawStrategy(deadwoodAfterDraw, PercentTwenty_v1.Helper.getSetBits(PercentTwenty_v1.GameState.seenCards), isUnmeldable);
+        return (jacobsScaryBigArrayMonstrosity[deadwoodAfterDraw][makesMeldIndex] == 1);
+
+        //boolean isUnmeldable = PercentTwenty_v1.Helper.getUnmeldableCardsAfterDraw(newCards).contains(card);
+        //return PercentTwenty_v1.Helper.getDrawStrategy(deadwoodAfterDraw, PercentTwenty_v1.Helper.getSetBits(PercentTwenty_v1.GameState.seenCards), isUnmeldable);
     }
 
     @Override
