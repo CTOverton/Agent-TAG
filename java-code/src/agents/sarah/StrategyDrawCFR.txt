@@ -1,0 +1,90 @@
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
+
+public class StrategyDrawCFR extends StrategyDraw {
+	private boolean continued = true;
+	private ArrayList<String> stratKey = new ArrayList<>();
+
+	public StrategyDrawCFR(boolean training) {
+		super(training);
+		// repopulate the strategy with previous results, allowing for training to be stopped
+		// and resumed as needed without losing data
+		if(continued){
+			try {
+				fromFile("CFR_Draw_Deadwood_Prev.txt");
+				int count = 0;
+				for (Map.Entry<String, Double> entry : this.sumStrategy.entrySet()) {
+					if (count % 2 == 0) {
+						stratKey.add(entry.getKey().substring(0, entry.getKey().length() - 2));
+					}
+					count++;
+				}
+			} catch (Exception e){
+				// resume training as normal, previous log file just doesn't exist
+			}
+		}
+	}
+
+	@Override
+	public ActionDraw[] getStrategy(GameState state) {
+		int improvement = PshUtil.getDeadwoodImprovementIfDrawFaceUpCard(state);
+		if (improvement > 0 && PshUtil.doesFaceUpCardMakeNewMeld(state)) {
+			ActionDraw[] strategy = {new ActionDraw(true, 1.0, null)};
+			return strategy;
+		}
+		// check by num seen cards / 5, using this to judge how far we are into the game but avoiding a
+		// very fine-tuned strategy that may be exploitable
+		// NOTE: same strategy used in Knock CFR, since you may want to risk face up cards that do not
+		// immediately meld early in the game
+		int numSeenCards = PshUtil.getSetBits(state.getCurrentPlayerSeenCards())/5;
+		// check if face up card is unmeldable even if another card is picked up
+		boolean isFaceUpMeldable = GinRummyUtil.bitstringToCards(PshUtil.getUnmatchableCards(state, 1))
+				.contains(state.getFaceUpCardAsObject());
+		ActionDraw[] strategy = new ActionDraw[] {
+				new ActionDraw(true, 0.0, improvement + "_" + numSeenCards + "_" + isFaceUpMeldable + "_y"),
+				new ActionDraw(false, 0.0, improvement + "_" + numSeenCards + "_" + isFaceUpMeldable + "_n")};
+		if(!stratKey.contains(improvement + "_" + numSeenCards + "_" + isFaceUpMeldable)) {
+			stratKey.add(improvement + "_" + numSeenCards + "_" + isFaceUpMeldable);
+		}
+		getProbabilities(strategy);			
+		return strategy;
+	}
+
+	/**
+	 * @see Strategy#getName()
+	 */
+	@Override
+	public String getName() {
+		return "DrawStrategy_CFR";
+	}
+
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		
+		sb.append(getName() + "\nDrawing Percent as a function of DeadWood Improvement\n");
+		sb.append("draw\tdon't\n");
+//		for (int d = 0; d <= 9; d++) {
+//			String key_k = d + "_y";
+//			String key_n = d + "_n";
+//			sb.append(d + "\t");
+//			sb.append(String.format("%.3f", sumStrategy.getOrDefault(key_k,1.0) /(sumStrategy.getOrDefault(key_k,1.0)+sumStrategy.getOrDefault(key_n,1.0))));
+//			sb.append("\t");
+//			sb.append(String.format("%.3f", sumStrategy.getOrDefault(key_n,1.0) /(sumStrategy.getOrDefault(key_k,1.0)+sumStrategy.getOrDefault(key_n,1.0))));
+//			sb.append("\n");
+//		}
+		Collections.sort(stratKey);
+		for(int i = 0; i < stratKey.size(); i++){
+			String key_k = stratKey.get(i)  + "_k";
+			String key_n = stratKey.get(i)  + "_n";
+			sb.append(stratKey.get(i) + "\t");
+			sb.append(String.format("%.3f", sumStrategy.getOrDefault(key_k,1.0) /(sumStrategy.getOrDefault(key_k,1.0)+sumStrategy.getOrDefault(key_n,1.0))));
+			sb.append("\t");
+			sb.append(String.format("%.3f", sumStrategy.getOrDefault(key_n,1.0) /(sumStrategy.getOrDefault(key_k,1.0)+sumStrategy.getOrDefault(key_n,1.0))));
+			sb.append("\n");
+		}
+	    return sb.toString();
+	}
+
+}

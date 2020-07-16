@@ -1,0 +1,115 @@
+import java.util.ArrayList;
+import java.util.Random;
+
+public class StrategyKnockCFR extends StrategyKnock {
+	private boolean verbose;
+	
+	public StrategyKnockCFR(boolean training) {
+		this(training, false);
+	}
+
+	public StrategyKnockCFR(boolean training, boolean verbose) {
+		super(training);
+		this.verbose = verbose;
+	}
+	
+	/**
+	 * If I have gin, I will knock.  If I cannot knock, I won't.  Otherwise I use either
+	 * regret matching (if training is true) or the learned strategy if training is false.
+	 */
+	@Override
+	public ActionKnock[] getStrategy(GameState state) {
+		ArrayList<Card> myCards = state.getCurrentPlayerCardsAsList();
+		ArrayList<ArrayList<ArrayList<Card>>> bestMeldSets = GinRummyUtil.cardsToBestMeldSets(myCards);
+
+		int deadwood;
+		if (bestMeldSets.isEmpty())
+			deadwood = GinRummyUtil.getDeadwoodPoints(myCards);
+		else
+			deadwood = GinRummyUtil.getDeadwoodPoints(bestMeldSets.get(0), myCards);
+		
+		ActionKnock[] strategy;
+		if (deadwood == 0) {
+			// I have gin, so always knock
+			if (verbose) System.out.println("I have gin, so I will knock.");
+			strategy = new ActionKnock[] { new ActionKnock(true, 1.0, null)};
+		}
+		else if (deadwood  > GinRummyUtil.MAX_DEADWOOD) {
+			// I can't knock
+			if (verbose) System.out.println("I can't knock, current deadwood: " + deadwood);
+			strategy = new ActionKnock[] {new ActionKnock(false, 1.0, null)};
+		}
+		else {
+			// I can knock, let's see if I should
+			// check by num seen cards / 5, using this to judge how far we are into the game but avoiding a
+			// very fine-tuned strategy that may be exploitable
+			int numSeenCards = PshUtil.getSetBits(state.getCurrentPlayerSeenCards())/5;
+			// track how many unmatchable cards there are
+			int numUnmatchableCards = PshUtil.getSetBits(PshUtil.getUnmatchableCards(state, 1));
+//			// check by decision point
+//			strategy = new ActionKnock[] {
+//					new ActionKnock(true, 0.0, deadwood + "_" + numSeenCards + "_" + numUnmatchableCards + "_k"),
+//					new ActionKnock(false, 0.0, deadwood + "_" + numSeenCards + "_" + numUnmatchableCards + "_n")};
+//			getProbabilities(strategy);
+			//------------------------------------
+			// Use CFR strategy from previous program to train draw strategy
+			strategy = new ActionKnock[] { new ActionKnock(
+					getKnockStrategy(deadwood, numSeenCards, numUnmatchableCards), 1.0, null)};
+		}
+		return strategy;
+	}
+
+	@Override
+	public String getName() {
+		return "KnockStrategyCFR";
+	}
+	
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		
+		sb.append(getName() + "\nKnocking Percent as a function of DeadWood\n");
+		sb.append("knock\tdon't\n");
+		for (int d = 1; d <= 10; d++) {
+			String key_k = d + "_k";
+			String key_n = d + "_n";
+			sb.append(d + "\t");
+			sb.append(String.format("%.3f", sumStrategy.getOrDefault(key_k,1.0) /(sumStrategy.getOrDefault(key_k,1.0)+sumStrategy.getOrDefault(key_n,1.0))));
+			sb.append("\t");
+			sb.append(String.format("%.3f", sumStrategy.getOrDefault(key_n,1.0) /(sumStrategy.getOrDefault(key_k,1.0)+sumStrategy.getOrDefault(key_n,1.0))));
+			sb.append("\n");
+		}
+	    return sb.toString();
+	}
+
+	// Knock Nash Equil. strategy based on seen cards / 5 and deadwood
+	// Carried over from my V2 agent
+	public static boolean getKnockStrategy(int deadwood, long seen, int unmatchable){
+		// strategy[deadwood-1][seen/5 - 2]
+		int[][][] strategy = {
+				//   2        3          4         5        6         7          8         = number seen/3
+				{{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0}},   // deadwood = 1
+				{{1,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,0,0},{0,0,1,0},{0,0,0,0},{0,0,0,0}},   // deadwood = 2
+				{{1,0,1,0},{0,1,0,0},{0,0,1,0},{0,1,1,0},{0,0,1,0},{0,0,1,0},{0,0,0,0}},   // deadwood = 3
+				{{1,1,1,0},{1,1,0,0},{0,1,1,0},{0,1,1,0},{0,0,1,1},{0,0,0,0},{0,0,0,0}},   // deadwood = 4
+				{{1,1,1,0},{1,1,1,0},{0,1,1,0},{0,0,1,1},{0,1,0,0},{0,0,0,0},{0,0,0,0}},   // deadwood = 5
+				{{1,1,1,1},{1,1,1,1},{1,1,1,1},{0,0,1,1},{0,0,1,1},{0,0,0,0},{0,0,0,0}},   // deadwood = 6
+				{{1,1,1,1},{1,1,1,1},{0,1,1,1},{0,0,1,1},{0,0,0,0},{0,0,0,0},{0,0,0,0}},    // deadwood = 7
+				{{1,1,1,1},{1,1,1,1},{0,1,1,1},{0,0,1,1},{0,0,0,0},{0,0,0,0},{0,0,0,0}},    // deadwood = 8
+				{{1,1,1,1},{1,1,1,1},{0,1,1,1},{0,0,1,1},{0,0,0,0},{0,0,0,0},{0,0,0,0}},    // deadwood = 9
+				{{1,1,1,1},{1,1,1,1},{0,0,1,1},{0,0,0,1},{0,0,0,0},{0,0,0,0},{0,0,0,0}}     // deadwood = 10
+		};
+		int numSeenKey = PshUtil.getSetBits(seen)/5;
+		if(numSeenKey < 2 || deadwood > 10 || numSeenKey > 8 || unmatchable > 3){
+			// seen cannot be below 2 and deadwood cannot be above 10
+			// if numSeenKey > 8 or unmatchable > 3, no eq. strat for this, revert back to deadwood strat.
+			return false;
+		}
+		Random random = new Random();
+		if(strategy[deadwood-1][numSeenKey-2][unmatchable] == 1){
+			return true;
+		}
+		return false;
+	}
+
+}
