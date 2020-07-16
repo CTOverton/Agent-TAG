@@ -95,12 +95,6 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
                     // Cannot draw and discard face up card.
                     if (card == drawnCard && drawnCard == faceUpCard)
                         continue;
-                    // Disallow repeat of draw and discard.
-                    ArrayList<Card> drawDiscard = new ArrayList<Card>();
-                    drawDiscard.add(drawnCard);
-                    drawDiscard.add(card);
-                    if (drawDiscardBitstrings.contains(GinRummyUtil.cardsToBitstring(drawDiscard)))
-                        continue;
 
                     // get candidate cards that result in the minimum deadwood after discard
                     ArrayList<Card> remainingCards = (ArrayList<Card>) cards.clone();
@@ -179,11 +173,6 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
         // Pick random card from remaining candidate cards
         Card discard = candidateCards.get(random.nextInt(candidateCards.size()));
 
-        // Prevent future repeat of draw, discard pair.
-        ArrayList<Card> drawDiscard = new ArrayList<Card>();
-        drawDiscard.add(drawnCard);
-        drawDiscard.add(discard);
-        drawDiscardBitstrings.add(GinRummyUtil.cardsToBitstring(drawDiscard));
         return discard;
     }
 
