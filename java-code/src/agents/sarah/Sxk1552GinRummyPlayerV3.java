@@ -242,7 +242,6 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
     @Override
     public void reportScores(int[] scores) {
         // Ignored by simple player, but could affect strategy of more complex player.
-        System.out.println("Player: " + playerNum + ", Scores: " + scores);
     }
 
     @Override
