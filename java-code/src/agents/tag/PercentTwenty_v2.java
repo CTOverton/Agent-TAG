@@ -1,12 +1,10 @@
 package agents.tag;
 
 import ginrummy.*;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
-public class PercentTwenty_v1 implements GinRummyPlayer {
+public class PercentTwenty_v2 implements GinRummyPlayer {
     private int playerNum;
     @SuppressWarnings("unused")
     private int startingPlayerNum;
@@ -23,10 +21,10 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
         this.playerNum = playerNum;
         this.startingPlayerNum = startingPlayerNum;
         this.cards.clear();
-        PercentTwenty_v1.GameState.clearGameState();
+        PercentTwenty_v2.GameState.clearGameState();
         for (Card card : cards) {
             this.cards.add(card);
-            PercentTwenty_v1.GameState.seenCards = PercentTwenty_v1.GameState.seenCards | 1L << card.getId();  // track seen cards in own hand
+            PercentTwenty_v2.GameState.seenCards = PercentTwenty_v2.GameState.seenCards | 1L << card.getId();  // track seen cards in own hand
         }
         opponentKnocked = false;
         drawDiscardBitstrings.clear();
@@ -35,38 +33,54 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
     @Override
     public boolean willDrawFaceUpCard(Card card) {
         this.faceUpCard = card;
-        int[][] jacobsScaryBigArrayMonstrosity = new int[][]{
-                {0, 0}, // 0 DeadWood Drop
-                {0, 1}, // 1 Deadwood Drop, Makes Meld = index 1
-                {0, 1}, // 2 Deadwood drop, Makes Meld = index 1
-                {0, 1}, // 3
-                {0, 1}, // 4
-                {0, 1}, // 5
-                {0, 1}, // 6
-                {0, 1}, // 7
-                {0, 1}, // 8
-                {1, 1}, // 9 <--- Secretly the only real difference between my and Sarah's
-                {1, 1}, // 10 Anything greater than this doesn't matter, it's all the same
+        int[][][] jacobsScaryBigArrayMonstrosity = new int[][][]{
+                { // opponent can't meld
+                        {0, 0}, // 0 DeadWood Drop
+                        {0, 1}, // 1 Deadwood Drop, Makes Meld = index 1
+                        {0, 1}, // 2 Deadwood drop, Makes Meld = index 1
+                        {0, 1}, // 3
+                        {0, 1}, // 4
+                        {0, 1}, // 5
+                        {0, 1}, // 6
+                        {0, 1}, // 7
+                        {0, 1}, // 8
+                        {1, 1}, // 9 <--- Secretly the only real difference between my and Sarah's
+                        {1, 1}, // 10 Anything greater than this doesn't matter, it's all the same
+                },
+                { // opponent can meld
+                        {0, 0}, // 0 DeadWood Drop
+                        {0, 0}, // 1 Deadwood Drop, Makes Meld = index 1
+                        {0, 0}, // 2 Deadwood drop, Makes Meld = index 1
+                        {0, 1}, // 3
+                        {0, 1}, // 4
+                        {0, 1}, // 5
+                        {0, 1}, // 6
+                        {1, 0}, // 7
+                        {0, 1}, // 8
+                        {1, 1}, // 9 <--- Secretly the only real difference between my and Sarah's
+                        {1, 1}, // 10 Anything greater than this doesn't matter, it's all the same
+                }
         };
         @SuppressWarnings("unchecked")
         ArrayList<Card> newCards = (ArrayList<Card>) cards.clone();
         newCards.add(card);
 
         // track all seen face up cards
-        PercentTwenty_v1.GameState.seenCards = PercentTwenty_v1.GameState.seenCards | 1L << card.getId();
+        PercentTwenty_v2.GameState.seenCards = PercentTwenty_v2.GameState.seenCards | 1L << card.getId();
 
         // Draw the face up card if it forms a meld that lowers deadwood after discard
-        int deadwoodAfterDraw = Math.max(Math.min(PercentTwenty_v1.Helper.doesCardLowerDeadwood(cards, card), 10), 0);
+        int deadwoodAfterDraw = Math.max(Math.min(PercentTwenty_v2.Helper.doesCardLowerDeadwood(cards, card), 10), 0);
         int makesMeldIndex = 0;
         for (ArrayList<Card> meld : GinRummyUtil.cardsToAllMelds(newCards)) {
             if (meld.contains(card)) {
                 makesMeldIndex = 1;
             }
         }
-        return (jacobsScaryBigArrayMonstrosity[deadwoodAfterDraw][makesMeldIndex] == 1);
+        int makesOpponentMeld = (PercentTwenty_v2.Helper.canOpponentMakeMeld(card) ? 1 : 0);
+        return (jacobsScaryBigArrayMonstrosity[makesOpponentMeld][deadwoodAfterDraw][makesMeldIndex] == 1);
 
-        //boolean isUnmeldable = PercentTwenty_v1.Helper.getUnmeldableCardsAfterDraw(newCards).contains(card);
-        //return PercentTwenty_v1.Helper.getDrawStrategy(deadwoodAfterDraw, PercentTwenty_v1.Helper.getSetBits(PercentTwenty_v1.GameState.seenCards), isUnmeldable);
+        //boolean isUnmeldable = PercentTwenty_v2.Helper.getUnmeldableCardsAfterDraw(newCards).contains(card);
+        //return PercentTwenty_v2.Helper.getDrawStrategy(deadwoodAfterDraw, PercentTwenty_v2.Helper.getSetBits(PercentTwenty_v2.GameState.seenCards), isUnmeldable);
     }
 
     @Override
@@ -76,19 +90,19 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
             cards.add(drawnCard);
             this.drawnCard = drawnCard;
             // add card to tracked seen cards
-            PercentTwenty_v1.GameState.seenCards = PercentTwenty_v1.GameState.seenCards | 1L << drawnCard.getId();
+            PercentTwenty_v2.GameState.seenCards = PercentTwenty_v2.GameState.seenCards | 1L << drawnCard.getId();
             // decrease number of cards left in face down pile if face down drawn
             if(drawnCard != this.faceUpCard){
-                PercentTwenty_v1.GameState.numFaceDownCards--;
+                PercentTwenty_v2.GameState.numFaceDownCards--;
             }
         }
         // decrease number of cards left in face down pile when drawn from by other player
         if(playerNum != this.playerNum && drawnCard == null) {
-            PercentTwenty_v1.GameState.numFaceDownCards--;
+            PercentTwenty_v2.GameState.numFaceDownCards--;
         }
         // track cards the opponent has drawn from face up pile
         if(playerNum != this.playerNum && drawnCard != null){
-            PercentTwenty_v1.GameState.knownOpponentCards = PercentTwenty_v1.GameState.knownOpponentCards | 1L << drawnCard.getId();
+            PercentTwenty_v2.GameState.knownOpponentCards = PercentTwenty_v2.GameState.knownOpponentCards | 1L << drawnCard.getId();
         }
     }
 
@@ -99,7 +113,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
         //  Test against another bot to see if this strategy is effective
 
         // find a set of cards that can be discarded to result in minimal deadwood
-        ArrayList<Card> candidateCards = PercentTwenty_v1.Helper.getBestDiscardCards(cards);
+        ArrayList<Card> candidateCards = PercentTwenty_v2.Helper.getBestDiscardCards(cards);
         // only one card found, verify it is a valid discard
         if(candidateCards.size() == 1){
             // cannot discard this card, find one that is second best, otherwise discard it
@@ -142,7 +156,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
         int numCards = candidateCards.size();
         if(numCards > 1) {
             for (Card card : candidateCards) {
-                if (PercentTwenty_v1.Helper.canOpponentMakeMeld(card) && (tempCandidateCards & 1L << card.getId()) != 0) {
+                if (PercentTwenty_v2.Helper.canOpponentMakeMeld(card) && (tempCandidateCards & 1L << card.getId()) != 0) {
                     tempCandidateCards = tempCandidateCards ^ 1L << card.getId();
                     numCards--;
                 }
@@ -151,7 +165,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
             candidateCards = GinRummyUtil.bitstringToCards(tempCandidateCards);
         }
         // If candidate cards still > 1, remove any that will never make a meld
-        ArrayList<Card> unmeldableCards2 = PercentTwenty_v1.Helper.getUnmeldableCardsAfterTwoDraw(cards);
+        ArrayList<Card> unmeldableCards2 = PercentTwenty_v2.Helper.getUnmeldableCardsAfterTwoDraw(cards);
         numCards = candidateCards.size();
         if(numCards > 1){
             for (Card card : candidateCards) {
@@ -164,7 +178,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
             candidateCards = GinRummyUtil.bitstringToCards(tempCandidateCards);
         }
         // If candidate cards still > 1, remove any cards that won't make a meld after one draw
-        ArrayList<Card> unmeldableCards1 = PercentTwenty_v1.Helper.getUnmeldableCardsAfterDraw(cards);
+        ArrayList<Card> unmeldableCards1 = PercentTwenty_v2.Helper.getUnmeldableCardsAfterDraw(cards);
         if(numCards > 1){
             for (Card card : candidateCards) {
                 if (unmeldableCards1.contains(card) && (tempCandidateCards & 1L << card.getId()) != 0) {
@@ -178,7 +192,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
         // If candidate cards still > 1, check if likely that opponent will discard tens or face cards,
         // increasing likelihood of picking up meld from face up
         if(numCards > 1){
-            double avgDiscardRank = PercentTwenty_v1.Helper.getAveragePointsForOpponentDiscards();
+            double avgDiscardRank = PercentTwenty_v2.Helper.getAveragePointsForOpponentDiscards();
             if(avgDiscardRank == 10){
                 for(Card card : candidateCards){
                     if(GinRummyUtil.getDeadwoodPoints(card) == 10){
@@ -207,14 +221,14 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
         if (playerNum == this.playerNum) {
             cards.remove(discardedCard);
             // end of turn, increment turn counter
-            PercentTwenty_v1.GameState.numTurns++;
+            PercentTwenty_v2.GameState.numTurns++;
         }
         // track the cards the opponent discards
         if (playerNum != this.playerNum){
-            PercentTwenty_v1.GameState.discardedOpponentCards = PercentTwenty_v1.GameState.discardedOpponentCards | 1L << discardedCard.getId();
+            PercentTwenty_v2.GameState.discardedOpponentCards = PercentTwenty_v2.GameState.discardedOpponentCards | 1L << discardedCard.getId();
             // if discardedCard is known opponent card, remove
-            if ((PercentTwenty_v1.GameState.knownOpponentCards & 1L << discardedCard.getId()) != 0){
-                PercentTwenty_v1.GameState.knownOpponentCards = PercentTwenty_v1.GameState.knownOpponentCards ^ 1L << discardedCard.getId();
+            if ((PercentTwenty_v2.GameState.knownOpponentCards & 1L << discardedCard.getId()) != 0){
+                PercentTwenty_v2.GameState.knownOpponentCards = PercentTwenty_v2.GameState.knownOpponentCards ^ 1L << discardedCard.getId();
             }
         }
     }
@@ -224,18 +238,18 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
         // Check if deadwood of maximal meld is low enough to go out.
         ArrayList<ArrayList<ArrayList<Card>>> bestMeldSets = GinRummyUtil.cardsToBestMeldSets(cards);
         if(!opponentKnocked) {
-            int bestDeadwood = PercentTwenty_v1.Helper.getBestDeadwood(this.cards);
+            int bestDeadwood = PercentTwenty_v2.Helper.getBestDeadwood(this.cards);
             // can't knock or no melds
             if (bestMeldSets.isEmpty() || bestDeadwood > GinRummyUtil.MAX_DEADWOOD) {
                 return null;
             }
             // Check if opponent can meld into deadwood cards, if so, try not to use that set
             if(bestMeldSets.size() > 1){
-                ArrayList<ArrayList<Card>> deadwoodCards = PercentTwenty_v1.Helper.getDeadwoodCards(cards, bestMeldSets);
+                ArrayList<ArrayList<Card>> deadwoodCards = PercentTwenty_v2.Helper.getDeadwoodCards(cards, bestMeldSets);
                 long leftoverCards = 0;
                 for(int i = 0; i < deadwoodCards.size(); i++){
                     for(Card card : deadwoodCards.get(i)){
-                        if(!PercentTwenty_v1.Helper.canCardBeLaidOff(card) && (leftoverCards & 1L << card.getId()) == 0){
+                        if(!PercentTwenty_v2.Helper.canCardBeLaidOff(card) && (leftoverCards & 1L << card.getId()) == 0){
                             leftoverCards = leftoverCards | 1L << card.getId();
                         }
                     }
@@ -250,7 +264,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
                 return bestMeldSets.get(random.nextInt(bestMeldSets.size()));
             }
             // follow nash eq. strategy for seen cards,unmatchable cards, and deadwood
-            if(!PercentTwenty_v1.Helper.getKnockStrategy(bestDeadwood, PercentTwenty_v1.GameState.seenCards, PercentTwenty_v1.Helper.getUnmeldableCardsAfterDraw(cards).size())){
+            if(!PercentTwenty_v2.Helper.getKnockStrategy(bestDeadwood, PercentTwenty_v2.GameState.seenCards, PercentTwenty_v2.Helper.getUnmeldableCardsAfterDraw(cards).size())){
                 return null;
             }
         }
@@ -331,7 +345,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
             int count = 0;
             for (int i = 0; i < 52; i++){
                 Card c = Card.getCard(i);
-                if ((1L << c.getId() & PercentTwenty_v1.GameState.seenCards) == 0) {
+                if ((1L << c.getId() & PercentTwenty_v2.GameState.seenCards) == 0) {
                     if((myHand & 1L << c.getId()) == 0){
                         myHand = myHand | 1L << c.getId();
                         if (getDeadwoodAfterDiscard(GinRummyUtil.bitstringToCards(myHand)) == 0) {
@@ -360,7 +374,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
 
         // Determine whether opponent can make a meld with a specific card
         public static boolean canOpponentMakeMeld(Card card){
-            long cardsNotInOpponentHand = PercentTwenty_v1.GameState.seenCards ^ PercentTwenty_v1.GameState.knownOpponentCards ^ 1L << card.getId();
+            long cardsNotInOpponentHand = PercentTwenty_v2.GameState.seenCards ^ PercentTwenty_v2.GameState.knownOpponentCards ^ 1L << card.getId();
             int cardRank = card.getRank();
             int cardSuit = card.getSuit();
             int count = 0;
@@ -398,7 +412,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
         // Note, this may work better against simple player because all known opponent cards MUST be picked up
         // because they melded, as Simple player only picks face up cards during melds
         public static boolean canCardBeLaidOff(Card card){
-            long oppHand = PercentTwenty_v1.GameState.knownOpponentCards;
+            long oppHand = PercentTwenty_v2.GameState.knownOpponentCards;
             int cardID = card.getId();
             int cardRank = card.getRank();
             int cardSuit = card.getSuit();
@@ -444,7 +458,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
                 for(Card leftoverCard : GinRummyUtil.bitstringToCards(leftoverCards)){
                     for (int i = 0; i < 52; i++){
                         Card c = Card.getCard(i);
-                        if ((1L << c.getId() & PercentTwenty_v1.GameState.seenCards) == 0) {
+                        if ((1L << c.getId() & PercentTwenty_v2.GameState.seenCards) == 0) {
                             myCards.add(c);
                             for (ArrayList<Card> meld : GinRummyUtil.cardsToAllMelds(myCards)) {
                                 if (meld.contains(leftoverCard) && (tempLeftoverCards & 1L << leftoverCard.getId()) != 0) {
@@ -475,7 +489,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
             long availableCardsBitStr = 0;
             for (int i = 0; i < 52; i++){
                 Card c = Card.getCard(i);
-                if ((1L << c.getId() & PercentTwenty_v1.GameState.seenCards) == 0 || (1L << c.getId() & leftoverCards) != 0 ) {
+                if ((1L << c.getId() & PercentTwenty_v2.GameState.seenCards) == 0 || (1L << c.getId() & leftoverCards) != 0 ) {
                     availableCardsBitStr = availableCardsBitStr | 1L << c.getId();
                 }
             }
@@ -499,7 +513,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
             // for each unseen card, add to hand and get best deadwood
             for (int i = 0; i < 52; i++){
                 Card c = Card.getCard(i);
-                if ((1L << c.getId() & PercentTwenty_v1.GameState.seenCards) == 0) {
+                if ((1L << c.getId() & PercentTwenty_v2.GameState.seenCards) == 0) {
                     myCards.add(c);
                     totalDeadwood += getDeadwoodAfterDiscard(myCards);
                     numCards++;
@@ -532,7 +546,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
         public static double getAveragePointsForOpponentDiscards(){
             int totalPoints = 0;
             int numCards = 0;
-            long tmp = PercentTwenty_v1.GameState.discardedOpponentCards;
+            long tmp = PercentTwenty_v2.GameState.discardedOpponentCards;
             while (tmp != 0){
                 long tmp1 = tmp & (tmp-1);
                 long card = tmp ^ tmp1;
@@ -581,8 +595,7 @@ public class PercentTwenty_v1 implements GinRummyPlayer {
 
         // Knock Nash Equil. strategy based on seen cards / 5, improvement, and if the card is unmatchable
         public static boolean getDrawStrategy(int improvement, long seen, boolean meldable){
-            int meldableIndex = 0;
-            if(meldable){meldableIndex = 1;}
+            int meldableIndex = (meldable? 1 : 0);
             // strategy[deadwood-1][seen/5 - 2][meldable]
             int[][][] strategy = {
                     // 2     3     4     5     6     7     8         = number seen/3
