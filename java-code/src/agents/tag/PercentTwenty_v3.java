@@ -1,17 +1,10 @@
-package agents.sarah;
-//===============================================================================
-// Name			    : agents.sarah.Sxk1552GinRummyPlayerV3.java
-// Author		    : Sarah Kettell
-//================================================================================
+package agents.tag;
 
-import ginrummy.Card;
-import ginrummy.GinRummyPlayer;
-import ginrummy.GinRummyUtil;
-
+import ginrummy.*;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
+public class PercentTwenty_v3 implements GinRummyPlayer {
     private int playerNum;
     @SuppressWarnings("unused")
     private int startingPlayerNum;
@@ -28,10 +21,10 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
         this.playerNum = playerNum;
         this.startingPlayerNum = startingPlayerNum;
         this.cards.clear();
-        GameState.clearGameState();
+        PercentTwenty_v2.GameState.clearGameState();
         for (Card card : cards) {
             this.cards.add(card);
-            GameState.seenCards = GameState.seenCards | 1L << card.getId();  // track seen cards in own hand
+            PercentTwenty_v2.GameState.seenCards = PercentTwenty_v2.GameState.seenCards | 1L << card.getId();  // track seen cards in own hand
         }
         opponentKnocked = false;
         drawDiscardBitstrings.clear();
@@ -40,22 +33,54 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
     @Override
     public boolean willDrawFaceUpCard(Card card) {
         this.faceUpCard = card;
+        int[][][] jacobsScaryBigArrayMonstrosity = new int[][][]{
+                { // opponent can't meld
+                        {0, 0}, // 0 DeadWood Drop
+                        {0, 1}, // 1 Deadwood Drop, Makes Meld = index 1
+                        {0, 1}, // 2 Deadwood drop, Makes Meld = index 1
+                        {0, 1}, // 3
+                        {0, 1}, // 4
+                        {0, 1}, // 5
+                        {0, 1}, // 6
+                        {0, 1}, // 7
+                        {0, 1}, // 8
+                        {1, 1}, // 9 <--- Secretly the only real difference between my and Sarah's
+                        {1, 1}, // 10 Anything greater than this doesn't matter, it's all the same
+                },
+                { // opponent can meld
+                        {0, 0}, // 0 DeadWood Drop
+                        {0, 0}, // 1 Deadwood Drop, Makes Meld = index 1
+                        {0, 0}, // 2 Deadwood drop, Makes Meld = index 1
+                        {0, 1}, // 3
+                        {0, 1}, // 4
+                        {0, 1}, // 5
+                        {0, 1}, // 6
+                        {1, 0}, // 7
+                        {0, 1}, // 8
+                        {1, 1}, // 9 <--- Secretly the only real difference between my and Sarah's
+                        {1, 1}, // 10 Anything greater than this doesn't matter, it's all the same
+                }
+        };
         @SuppressWarnings("unchecked")
         ArrayList<Card> newCards = (ArrayList<Card>) cards.clone();
         newCards.add(card);
 
         // track all seen face up cards
-        GameState.seenCards = GameState.seenCards | 1L << card.getId();
+        PercentTwenty_v2.GameState.seenCards = PercentTwenty_v2.GameState.seenCards | 1L << card.getId();
 
         // Draw the face up card if it forms a meld that lowers deadwood after discard
-        int deadwoodAfterDraw = Helper.doesCardLowerDeadwood(cards, card);
+        int deadwoodAfterDraw = Math.max(Math.min(PercentTwenty_v2.Helper.doesCardLowerDeadwood(cards, card), 10), 0);
+        int makesMeldIndex = 0;
         for (ArrayList<Card> meld : GinRummyUtil.cardsToAllMelds(newCards)) {
-            if (meld.contains(card) && deadwoodAfterDraw > 0) {
-                return true;
+            if (meld.contains(card)) {
+                makesMeldIndex = 1;
             }
         }
-        boolean isUnmeldable = Helper.getUnmeldableCardsAfterDraw(newCards).contains(card);
-        return Helper.getDrawStrategy(deadwoodAfterDraw, Helper.getSetBits(GameState.seenCards), isUnmeldable);
+        int makesOpponentMeld = (PercentTwenty_v3.Helper.canMeld(PercentTwenty_v2.GameState.knownOpponentCards, card) ? 1 : 0);
+        return (jacobsScaryBigArrayMonstrosity[makesOpponentMeld][deadwoodAfterDraw][makesMeldIndex] == 1);
+
+        //boolean isUnmeldable = PercentTwenty_v2.Helper.getUnmeldableCardsAfterDraw(newCards).contains(card);
+        //return PercentTwenty_v2.Helper.getDrawStrategy(deadwoodAfterDraw, PercentTwenty_v2.Helper.getSetBits(PercentTwenty_v2.GameState.seenCards), isUnmeldable);
     }
 
     @Override
@@ -65,27 +90,30 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
             cards.add(drawnCard);
             this.drawnCard = drawnCard;
             // add card to tracked seen cards
-            GameState.seenCards = GameState.seenCards | 1L << drawnCard.getId();
+            PercentTwenty_v2.GameState.seenCards = PercentTwenty_v2.GameState.seenCards | 1L << drawnCard.getId();
             // decrease number of cards left in face down pile if face down drawn
             if(drawnCard != this.faceUpCard){
-                GameState.numFaceDownCards--;
+                PercentTwenty_v2.GameState.numFaceDownCards--;
             }
         }
         // decrease number of cards left in face down pile when drawn from by other player
         if(playerNum != this.playerNum && drawnCard == null) {
-            GameState.numFaceDownCards--;
+            PercentTwenty_v2.GameState.numFaceDownCards--;
         }
         // track cards the opponent has drawn from face up pile
         if(playerNum != this.playerNum && drawnCard != null){
-            GameState.knownOpponentCards = GameState.knownOpponentCards | 1L << drawnCard.getId();
+            PercentTwenty_v2.GameState.knownOpponentCards = PercentTwenty_v2.GameState.knownOpponentCards | 1L << drawnCard.getId();
         }
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Card getDiscard() {
+        // TODO: by time by allowing repeat discards
+        //  Test against another bot to see if this strategy is effective
+
         // find a set of cards that can be discarded to result in minimal deadwood
-        ArrayList<Card> candidateCards = Helper.getBestDiscardCards(cards);
+        ArrayList<Card> candidateCards = PercentTwenty_v2.Helper.getBestDiscardCards(cards);
         // only one card found, verify it is a valid discard
         if(candidateCards.size() == 1){
             // cannot discard this card, find one that is second best, otherwise discard it
@@ -94,6 +122,12 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
                 for (Card card : cards) {
                     // Cannot draw and discard face up card.
                     if (card == drawnCard && drawnCard == faceUpCard)
+                        continue;
+                    // Disallow repeat of draw and discard. todo
+                    ArrayList<Card> drawDiscard = new ArrayList<Card>();
+                    drawDiscard.add(drawnCard);
+                    drawDiscard.add(card);
+                    if (drawDiscardBitstrings.contains(GinRummyUtil.cardsToBitstring(drawDiscard)))
                         continue;
 
                     // get candidate cards that result in the minimum deadwood after discard
@@ -122,7 +156,7 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
         int numCards = candidateCards.size();
         if(numCards > 1) {
             for (Card card : candidateCards) {
-                if (Helper.canOpponentMakeMeld(card) && (tempCandidateCards & 1L << card.getId()) != 0) {
+                if (PercentTwenty_v2.Helper.canOpponentMakeMeld(card) && (tempCandidateCards & 1L << card.getId()) != 0) {
                     tempCandidateCards = tempCandidateCards ^ 1L << card.getId();
                     numCards--;
                 }
@@ -131,7 +165,7 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
             candidateCards = GinRummyUtil.bitstringToCards(tempCandidateCards);
         }
         // If candidate cards still > 1, remove any that will never make a meld
-        ArrayList<Card> unmeldableCards2 = Helper.getUnmeldableCardsAfterTwoDraw(cards);
+        ArrayList<Card> unmeldableCards2 = PercentTwenty_v2.Helper.getUnmeldableCardsAfterTwoDraw(cards);
         numCards = candidateCards.size();
         if(numCards > 1){
             for (Card card : candidateCards) {
@@ -144,7 +178,7 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
             candidateCards = GinRummyUtil.bitstringToCards(tempCandidateCards);
         }
         // If candidate cards still > 1, remove any cards that won't make a meld after one draw
-        ArrayList<Card> unmeldableCards1 = Helper.getUnmeldableCardsAfterDraw(cards);
+        ArrayList<Card> unmeldableCards1 = PercentTwenty_v2.Helper.getUnmeldableCardsAfterDraw(cards);
         if(numCards > 1){
             for (Card card : candidateCards) {
                 if (unmeldableCards1.contains(card) && (tempCandidateCards & 1L << card.getId()) != 0) {
@@ -158,7 +192,7 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
         // If candidate cards still > 1, check if likely that opponent will discard tens or face cards,
         // increasing likelihood of picking up meld from face up
         if(numCards > 1){
-            double avgDiscardRank = Helper.getAveragePointsForOpponentDiscards();
+            double avgDiscardRank = PercentTwenty_v2.Helper.getAveragePointsForOpponentDiscards();
             if(avgDiscardRank == 10){
                 for(Card card : candidateCards){
                     if(GinRummyUtil.getDeadwoodPoints(card) == 10){
@@ -173,6 +207,11 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
         // Pick random card from remaining candidate cards
         Card discard = candidateCards.get(random.nextInt(candidateCards.size()));
 
+        // Prevent future repeat of draw, discard pair. todo
+        ArrayList<Card> drawDiscard = new ArrayList<Card>();
+        drawDiscard.add(drawnCard);
+        drawDiscard.add(discard);
+        drawDiscardBitstrings.add(GinRummyUtil.cardsToBitstring(drawDiscard));
         return discard;
     }
 
@@ -182,14 +221,14 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
         if (playerNum == this.playerNum) {
             cards.remove(discardedCard);
             // end of turn, increment turn counter
-            GameState.numTurns++;
+            PercentTwenty_v2.GameState.numTurns++;
         }
         // track the cards the opponent discards
         if (playerNum != this.playerNum){
-            GameState.discardedOpponentCards = GameState.discardedOpponentCards | 1L << discardedCard.getId();
+            PercentTwenty_v2.GameState.discardedOpponentCards = PercentTwenty_v2.GameState.discardedOpponentCards | 1L << discardedCard.getId();
             // if discardedCard is known opponent card, remove
-            if ((GameState.knownOpponentCards & 1L << discardedCard.getId()) != 0){
-                GameState.knownOpponentCards = GameState.knownOpponentCards ^ 1L << discardedCard.getId();
+            if ((PercentTwenty_v2.GameState.knownOpponentCards & 1L << discardedCard.getId()) != 0){
+                PercentTwenty_v2.GameState.knownOpponentCards = PercentTwenty_v2.GameState.knownOpponentCards ^ 1L << discardedCard.getId();
             }
         }
     }
@@ -199,18 +238,18 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
         // Check if deadwood of maximal meld is low enough to go out.
         ArrayList<ArrayList<ArrayList<Card>>> bestMeldSets = GinRummyUtil.cardsToBestMeldSets(cards);
         if(!opponentKnocked) {
-            int bestDeadwood = Helper.getBestDeadwood(this.cards);
+            int bestDeadwood = PercentTwenty_v2.Helper.getBestDeadwood(this.cards);
             // can't knock or no melds
             if (bestMeldSets.isEmpty() || bestDeadwood > GinRummyUtil.MAX_DEADWOOD) {
                 return null;
             }
             // Check if opponent can meld into deadwood cards, if so, try not to use that set
             if(bestMeldSets.size() > 1){
-                ArrayList<ArrayList<Card>> deadwoodCards = Helper.getDeadwoodCards(cards, bestMeldSets);
+                ArrayList<ArrayList<Card>> deadwoodCards = PercentTwenty_v2.Helper.getDeadwoodCards(cards, bestMeldSets);
                 long leftoverCards = 0;
                 for(int i = 0; i < deadwoodCards.size(); i++){
                     for(Card card : deadwoodCards.get(i)){
-                        if(!Helper.canCardBeLaidOff(card) && (leftoverCards & 1L << card.getId()) == 0){
+                        if(!PercentTwenty_v2.Helper.canCardBeLaidOff(card) && (leftoverCards & 1L << card.getId()) == 0){
                             leftoverCards = leftoverCards | 1L << card.getId();
                         }
                     }
@@ -225,7 +264,7 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
                 return bestMeldSets.get(random.nextInt(bestMeldSets.size()));
             }
             // follow nash eq. strategy for seen cards,unmatchable cards, and deadwood
-            if(!Helper.getKnockStrategy(bestDeadwood, GameState.seenCards, Helper.getUnmeldableCardsAfterDraw(cards).size())){
+            if(!PercentTwenty_v2.Helper.getKnockStrategy(bestDeadwood, PercentTwenty_v2.GameState.seenCards, PercentTwenty_v2.Helper.getUnmeldableCardsAfterDraw(cards).size())){
                 return null;
             }
         }
@@ -306,7 +345,7 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
             int count = 0;
             for (int i = 0; i < 52; i++){
                 Card c = Card.getCard(i);
-                if ((1L << c.getId() & GameState.seenCards) == 0) {
+                if ((1L << c.getId() & PercentTwenty_v2.GameState.seenCards) == 0) {
                     if((myHand & 1L << c.getId()) == 0){
                         myHand = myHand | 1L << c.getId();
                         if (getDeadwoodAfterDiscard(GinRummyUtil.bitstringToCards(myHand)) == 0) {
@@ -335,7 +374,7 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
 
         // Determine whether opponent can make a meld with a specific card
         public static boolean canOpponentMakeMeld(Card card){
-            long cardsNotInOpponentHand = GameState.seenCards ^ GameState.knownOpponentCards ^ 1L << card.getId();
+            long cardsNotInOpponentHand = PercentTwenty_v2.GameState.seenCards ^ PercentTwenty_v2.GameState.knownOpponentCards ^ 1L << card.getId();
             int cardRank = card.getRank();
             int cardSuit = card.getSuit();
             int count = 0;
@@ -369,11 +408,64 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
             return false;
         }
 
+        // Jacob was here
+        public static boolean canMeld(long hand, Card card) {
+            /*
+                    Suit * 13 + rank.. ie
+
+                    Queen Clubs = 11
+                        (11 % 13) = 11 (Queen)
+                        (11 / 13) = 0 (Clubs)
+                    King Clubs = 12
+
+                    Queen Hearts = 24
+                        (24 % 13) = 11 (Queen)
+                        (24 / 13) = 1 (Hearts)
+                    King Hearts = 25
+             */
+            boolean canMakeSet;
+            boolean canMakeRun;
+            long cardSuit = (card.getId() / 13);
+            long cardRank = (card.getId() % 13);
+
+            if (cardRank == 0) {
+                canMakeRun = (hand & (1L << card.getId() + 1)) != 0 &&
+                        (hand & (1L << card.getId() + 2)) != 0;
+            }
+            else if (cardRank== 12) {
+                canMakeRun = (hand & (1L << card.getId() - 1)) != 0 &&
+                        (hand & (1L << card.getId() - 2)) != 0;
+            }
+            else {
+                canMakeRun = (hand & (1L << card.getId() + 1)) != 0 &&
+                        (hand & (1L << card.getId() - 1)) != 0;
+
+                if ((cardRank != 11 && cardRank != 1) && !canMakeRun) {
+                    canMakeRun = ((hand & (1L << card.getId() - 1)) != 0 &&
+                            (hand & (1L << card.getId() - 2)) != 0) ||
+                            ((hand & (1L << card.getId() + 1)) != 0 &&
+                                    (hand & (1L << card.getId() + 2)) != 0);
+
+                }
+            }
+
+            int matchingRankCount = 0;
+            for (int i = 0; i < 4; i++) {
+                if (i != cardSuit) {
+                    matchingRankCount += ((hand & (1L << (cardRank * i)) )!= 0 ? 1 : 0);
+                }
+            }
+
+            canMakeSet = (matchingRankCount >= 2);
+
+            return (canMakeRun || canMakeSet);
+        }
+
         // Determine if player can lay off discard card if opponent knocks
         // Note, this may work better against simple player because all known opponent cards MUST be picked up
         // because they melded, as Simple player only picks face up cards during melds
         public static boolean canCardBeLaidOff(Card card){
-            long oppHand = GameState.knownOpponentCards;
+            long oppHand = PercentTwenty_v2.GameState.knownOpponentCards;
             int cardID = card.getId();
             int cardRank = card.getRank();
             int cardSuit = card.getSuit();
@@ -419,7 +511,7 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
                 for(Card leftoverCard : GinRummyUtil.bitstringToCards(leftoverCards)){
                     for (int i = 0; i < 52; i++){
                         Card c = Card.getCard(i);
-                        if ((1L << c.getId() & GameState.seenCards) == 0) {
+                        if ((1L << c.getId() & PercentTwenty_v2.GameState.seenCards) == 0) {
                             myCards.add(c);
                             for (ArrayList<Card> meld : GinRummyUtil.cardsToAllMelds(myCards)) {
                                 if (meld.contains(leftoverCard) && (tempLeftoverCards & 1L << leftoverCard.getId()) != 0) {
@@ -450,7 +542,7 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
             long availableCardsBitStr = 0;
             for (int i = 0; i < 52; i++){
                 Card c = Card.getCard(i);
-                if ((1L << c.getId() & GameState.seenCards) == 0 || (1L << c.getId() & leftoverCards) != 0 ) {
+                if ((1L << c.getId() & PercentTwenty_v2.GameState.seenCards) == 0 || (1L << c.getId() & leftoverCards) != 0 ) {
                     availableCardsBitStr = availableCardsBitStr | 1L << c.getId();
                 }
             }
@@ -474,7 +566,7 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
             // for each unseen card, add to hand and get best deadwood
             for (int i = 0; i < 52; i++){
                 Card c = Card.getCard(i);
-                if ((1L << c.getId() & GameState.seenCards) == 0) {
+                if ((1L << c.getId() & PercentTwenty_v2.GameState.seenCards) == 0) {
                     myCards.add(c);
                     totalDeadwood += getDeadwoodAfterDiscard(myCards);
                     numCards++;
@@ -507,7 +599,7 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
         public static double getAveragePointsForOpponentDiscards(){
             int totalPoints = 0;
             int numCards = 0;
-            long tmp = GameState.discardedOpponentCards;
+            long tmp = PercentTwenty_v2.GameState.discardedOpponentCards;
             while (tmp != 0){
                 long tmp1 = tmp & (tmp-1);
                 long card = tmp ^ tmp1;
@@ -556,8 +648,7 @@ public class Sxk1552GinRummyPlayerV3 implements GinRummyPlayer {
 
         // Knock Nash Equil. strategy based on seen cards / 5, improvement, and if the card is unmatchable
         public static boolean getDrawStrategy(int improvement, long seen, boolean meldable){
-            int meldableIndex = 0;
-            if(meldable){meldableIndex = 1;}
+            int meldableIndex = (meldable? 1 : 0);
             // strategy[deadwood-1][seen/5 - 2][meldable]
             int[][][] strategy = {
                     // 2     3     4     5     6     7     8         = number seen/3
