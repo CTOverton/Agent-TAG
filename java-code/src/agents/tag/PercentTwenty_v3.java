@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class PercentTwenty_v3 implements GinRummyPlayer {
+    private CFRDiscard cfrStrat = new CFRDiscard();
     private int playerNum;
     @SuppressWarnings("unused")
     private int startingPlayerNum;
@@ -221,6 +222,23 @@ public class PercentTwenty_v3 implements GinRummyPlayer {
         // ---------------------------------------------------------------------------------
         // STEP 4: Use CFR to choose from remaining equally weighted cards.
         // JACOB MUST ADD HERE
+        // calculate the stage in game
+        int stageInGame = 0;
+        if(GameState.numFaceDownCards >= 20){ stageInGame = 0; }
+        else if(GameState.numFaceDownCards >= 10){ stageInGame = 1; }
+        else { stageInGame = 2; }
+        // CFR stuff
+        for(Card card : candidateCards){
+            if(cfrStrat.goodDiscard(card.getId(), Helper.getDeadwoodAfterDiscard(cards), stageInGame)){
+                // Prevent future repeat of draw, discard pair.
+                ArrayList<Card> drawDiscard = new ArrayList<Card>();
+                drawDiscard.add(drawnCard);
+                drawDiscard.add(card);
+                drawDiscardBitstrings.add(GinRummyUtil.cardsToBitstring(drawDiscard));
+                return card;
+            }
+        }
+        // CFR failed to choose a card, pick at random
         Card discard = candidateCards.get(random.nextInt(candidateCards.size()));
 
         // Prevent future repeat of draw, discard pair.
@@ -314,7 +332,7 @@ public class PercentTwenty_v3 implements GinRummyPlayer {
     static class GameState {
         final static long DECK = 0xF_FFFF_FFFF_FFFFL;
 
-        final static int NUM_FACEDOWN_LEFT = Card.NUM_CARDS - 22; // remove 20 cards in hands, 2 leftover at end
+        final static int NUM_FACEDOWN_LEFT = Card.NUM_CARDS - 2; // remove 20 cards in hands, 2 leftover at end
         static int numFaceDownCards = NUM_FACEDOWN_LEFT;
         static long seenCards = 0;
         static long knownOpponentCards = 0;
