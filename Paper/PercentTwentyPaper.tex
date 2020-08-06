@@ -115,7 +115,9 @@ AAAI creates proceedings, working notes, and technical reports directly from ele
 \section{Introduction}
 \noindent Our purpose was to provide a Gin Rummy agent that was more advanced than a purely heuristic-based one. We decided to do this because implementing an agent that can train itself is an area not too thoroughly researched.
 
-Our agent uses a combination of heuristics and counterfactual regret minimization to make decisions when drawing, discarding, knocking, and melding cards.
+Since Gin Rummy is an imperfect information game, or a game in which the agent does not know everything that is going on (such as what is in the opponent's hand), our agent uses a combination of heuristics, Shapley value regression, and counterfactual regret minimization to make decisions when drawing, discarding, knocking, and melding cards. We combine all of these strategies together to create an agent that can be trained in a reasonable amount of time without requiring a large amount of storage.
+
+[TODO Preliminary Results go here]
 
 \section{Copyright}
 All papers submitted for publication by AAAI Press must be accompanied by a valid signed copyright form. They must also contain the AAAI copyright notice at the bottom of the first page of the paper. There are no exceptions to these requirements. If you fail to provide us with a signed copyright form or disable the copyright notice, we will be unable to publish your paper. There are \textbf{no exceptions} to this policy. You will find a PDF version of the AAAI copyright form in the AAAI AuthorKit. Please see the specific instructions for your conference for submission details.
