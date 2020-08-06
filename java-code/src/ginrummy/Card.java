@@ -1,3 +1,5 @@
+package ginrummy;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Stack;
@@ -114,7 +116,7 @@ public class Card {
 	 * @param id Card id number (0 - 51)
 	 * @return corresponding Card object
 	 */
-	static Card getCard(int id) {
+	public static Card getCard(int id) {
 		return allCards[id];
 	}
 	
@@ -124,7 +126,7 @@ public class Card {
 	 * @param suit suit index
 	 * @return corresponding Card object
 	 */
-	static Card getCard(int rank, int suit) {
+	public static Card getCard(int rank, int suit) {
 		return allCards[suit * NUM_RANKS + rank];
 	}
 	
@@ -134,20 +136,20 @@ public class Card {
 	 * @param suit suit index
 	 * @return corresponding Card id number
 	 */
-	static int getId(int rank, int suit) {
+	public static int getId(int rank, int suit) {
 		return suit * NUM_RANKS + rank;
 	}
 
 	/**
-	 * Return a Stack deck of Cards corresponding to the give Microsoft FreeCell seed number
-	 * @param seed Microsoft FreeCell seed number
+	 * Return a Stack deck of Cards corresponding to the given shuffle seed number
+	 * @param seed shuffle seed number
 	 * @return corresponding Stack deck of Cards
 	 */
-	static public Stack<Card> getShuffle(int seed) {
+	public static Stack<Card> getShuffle(int seed) {
 		Stack<Card> deck = new Stack<Card>();
 		for (int i = 0; i < NUM_CARDS; i++)
 			deck.push(Card.allCards[i]);
-		Collections.shuffle(deck);
+		Collections.shuffle(deck, new java.util.Random(seed));
 		return deck;
 	}
 
@@ -210,12 +212,12 @@ public class Card {
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
-	public java.lang.String toString() {
+	public String toString() {
 		return rankNames[rank] + suitNames[suit];
 	}
 	
 	/**
-	 * A test to show Microsoft shuffle 617.  Output is consistent with data at http://freecellgamesolutions.com/
+	 * A test to show shuffle seed 617.
 	 * @param args (not used)
 	 */
 	public static void main(String[] args) {
