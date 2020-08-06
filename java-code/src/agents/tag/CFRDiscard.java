@@ -1,3 +1,5 @@
+package agents.tag;
+
 public class CFRDiscard {
     private int[][][][] strategy = new int[52][81][3][2];
     public CFRDiscard() {
@@ -70,7 +72,7 @@ public class CFRDiscard {
         this.init50();
         this.init51();
 
-        System.out.println("init done");
+        //System.out.println("init done");
     }
 
     private void init0() {
