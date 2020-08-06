@@ -72,7 +72,7 @@ public class CFRDiscard {
         this.init50();
         this.init51();
 
-        System.out.println("init done");
+        //System.out.println("init done");
     }
 
     private void init0() {

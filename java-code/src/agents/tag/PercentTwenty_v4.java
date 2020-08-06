@@ -1,10 +1,10 @@
 package agents.tag;
-
 import ginrummy.*;
+
 import java.util.ArrayList;
 import java.util.Random;
 
-public class PercentTwenty_v3 implements GinRummyPlayer {
+public class PercentTwenty_v4 implements GinRummyPlayer {
     private CFRDiscard cfrStrat = new CFRDiscard();
     private int playerNum;
     @SuppressWarnings("unused")
@@ -224,27 +224,27 @@ public class PercentTwenty_v3 implements GinRummyPlayer {
         Card discard = candidateCards.get(random.nextInt(candidateCards.size()));
 
         // ---------------------------------------------------------------------------------
-        // STEP 5: Use CFR to choose from remaining equally weighted cards.
+        // STEP 4: Use CFR to choose from remaining equally weighted cards.
         // calculate the stage in game
         int stageInGame = 0;
         if(GameState.numFaceDownCards >= 20){ stageInGame = 0; }
         else if(GameState.numFaceDownCards >= 10){ stageInGame = 1; }
         else { stageInGame = 2; }
         // CFR stuff
-//        for(Card card : candidateCards){
-//            try {
-//                if (cfrStrat.goodDiscard(card.getId(), Helper.getDeadwoodAfterDiscard(cards), stageInGame)) {
-//                    // Prevent future repeat of draw, discard pair.
-//                    ArrayList<Card> drawDiscard = new ArrayList<Card>();
-//                    drawDiscard.add(drawnCard);
-//                    drawDiscard.add(card);
-//                    drawDiscardBitstrings.add(GinRummyUtil.cardsToBitstring(drawDiscard));
-//                    discard = card;
-//                }
-//            } catch (Exception e){
-//                // do nothing, skip to next card
-//            }
-//        }
+        for(Card card : candidateCards){
+            try {
+                if (cfrStrat.goodDiscard(card.getId(), Helper.getDeadwoodAfterDiscard(cards), stageInGame)) {
+                    // Prevent future repeat of draw, discard pair.
+                    ArrayList<Card> drawDiscard = new ArrayList<Card>();
+                    drawDiscard.add(drawnCard);
+                    drawDiscard.add(card);
+                    drawDiscardBitstrings.add(GinRummyUtil.cardsToBitstring(drawDiscard));
+                    discard = card;
+                }
+            } catch (Exception e){
+                // do nothing, skip to next card
+            }
+        }
 
 
         // Prevent future repeat of draw, discard pair.
