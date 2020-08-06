@@ -1,8 +1,8 @@
 package ginrummy;
 
-import agents.jacob.Jag6248GinRummyPlayerV3;
-import agents.richard.rjb5973GinRummyPlayerV1;
-import agents.sarah.Sxk1552GinRummyPlayerV2;
+import agents.sarah.Sxk1552GinRummyPlayerV3;
+import agents.tag.PercentTwenty_v2;
+import agents.tag.PercentTwenty_v3;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -319,15 +319,17 @@ public class GinRummyGame {
 		ArrayList<GinRummyGame> games = new ArrayList<>();
 		
 //		games.add(new GinRummyGame(new Cto5068GinRummyPlayerV2(), new SimpleGinRummyPlayer()));
-		games.add(new GinRummyGame(new Jag6248GinRummyPlayerV3(), new SimpleGinRummyPlayer()));
-		games.add(new GinRummyGame(new rjb5973GinRummyPlayerV1(), new SimpleGinRummyPlayer()));
-		games.add(new GinRummyGame(new Sxk1552GinRummyPlayerV2(), new SimpleGinRummyPlayer()));
+//		games.add(new GinRummyGame(new Jag6248GinRummyPlayerV3(), new SimpleGinRummyPlayer()));
+//		games.add(new GinRummyGame(new rjb5973GinRummyPlayerV1(), new SimpleGinRummyPlayer()));
+//		games.add(new GinRummyGame(new Sxk1552GinRummyPlayerV2(), new SimpleGinRummyPlayer()));
+		games.add(new GinRummyGame(new PercentTwenty_v3(), new PercentTwenty_v2()));
+		games.add(new GinRummyGame(new PercentTwenty_v3(), new Sxk1552GinRummyPlayerV3()));
 
 		for (GinRummyGame game : games) {
 			System.out.println("----------------------------------------");
 			System.out.println("Playing game...");
 
-			int numGames = 1000;
+			int numGames = 5000;
 			int numP1Wins = 0;
 
 			long startMs = System.currentTimeMillis();

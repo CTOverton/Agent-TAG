@@ -1,3 +1,5 @@
+package agents.tag;
+
 public class CFRDiscard {
     private int[][][][] strategy = new int[52][81][3][2];
     public CFRDiscard() {
@@ -12,6 +14,7 @@ public class CFRDiscard {
      * @return
      */
     public boolean goodDiscard(int id, int currentDeadwood, int gameStage) {
+        if(currentDeadwood > 80){ currentDeadwood = 80; }
         return this.strategy[id][currentDeadwood][gameStage][0] == 1;
     }
 
@@ -69,7 +72,7 @@ public class CFRDiscard {
         this.init50();
         this.init51();
 
-        System.out.println("init done");
+        //System.out.println("init done");
     }
 
     private void init0() {
