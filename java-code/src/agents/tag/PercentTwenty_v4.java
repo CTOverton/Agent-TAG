@@ -5,7 +5,7 @@ import ginrummy.*;
 // Project:     Gin Rummy bot for Gin Rummy EAAI Undergraduate Research Challenge
 // Group Name:  PercentTwenty
 // Authors:     Richard Bowser, Jacob Gallucci, Sarah Kettell, Christian Overton
-// Date:        August 6, 2020
+// Date:        August 8, 2020
 // *********************************************************************************
 
 import java.util.ArrayList;
