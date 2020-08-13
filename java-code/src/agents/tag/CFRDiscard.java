@@ -11,10 +11,10 @@ public class CFRDiscard {
      * @param id Card ID (0-51)
      * @param currentDeadwood Current Deadwood of hand (0-80) Note: Function will set any deadwood > 80 to 80
      * @param gameStage Early = 0, Middle = 1, Late = 2
-     * @return
+     * @return if the current card is a good Discard by CFR
      */
     public boolean goodDiscard(int id, int currentDeadwood, int gameStage) {
-        if(currentDeadwood > 80){ currentDeadwood = 80; }
+        currentDeadwood = Math.max(currentDeadwood, 80);
         return this.strategy[id][currentDeadwood][gameStage][0] == 1;
     }
 
